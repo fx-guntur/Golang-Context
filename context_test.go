@@ -3,6 +3,7 @@ package belajargolangcontext
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"testing"
 )
 
@@ -32,8 +33,38 @@ func TestContextWithValue(t *testing.T) {
 	fmt.Println(contextE)
 	fmt.Println(contextF)
 
-	fmt.Println(contextF.Value("b")) // failed, contextF is not a child from contextB
-	fmt.Println(contextF.Value("c")) // sucess because it's parent have "c" value
+	fmt.Println(contextF.Value("b")) // nil, different parent
+	fmt.Println(contextF.Value("c")) // success
 	fmt.Println(contextF.Value("f")) // success
-	fmt.Println(contextA.Value("b")) // cannot take data from childe
+	fmt.Println(contextA.Value("b")) // nil, cannot take data from childe
+}
+
+func CreateCounter() chan int {
+	destination := make(chan int)
+
+	go func() {
+		defer close(destination)
+		counter := 1
+		for {
+			destination <- counter
+			counter++
+		}
+	}()
+
+	return destination
+}
+
+func TestContextWithCancel(t *testing.T) {
+	fmt.Println("Total goroutine : ", runtime.NumGoroutine())
+
+	destination := CreateCounter()
+
+	for n := range destination {
+		fmt.Println("counter", n)
+		if n == 10 {
+			break
+		}
+	}
+
+	fmt.Println("Total goroutine : ", runtime.NumGoroutine())
 }
